@@ -1,43 +1,52 @@
 import * as grpc from '@grpc/grpc-js';
-import * as protoLoader from '@grpc/proto-loader';
-import path from 'path';
-import { fileURLToPath } from 'url'; 
+import { MT5Service } from './services/MT5Service.js';
+import { RiskManager } from './services/RiskManager.js';
+import { ScalperEngine } from './engine/ScalperEngine.js';
+import { dunamProto } from './core/ProtoLoader.js'; // Helper to load your .proto
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const PROTO_PATH = path.join(__dirname, './proto/trading.proto');
-const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-    keepCase: true,
-    longs: String,
-    enums: String,
-    defaults: true,
-    oneofs: true
-});
-
-const dunamProto = grpc.loadPackageDefinition(packageDefinition) as any;
+const mt5 = new MT5Service();
+const risk = RiskManager.getInstance(mt5);
+const engine = new ScalperEngine(mt5);
 
 const server = new grpc.Server();
 
 server.addService(dunamProto.dunam.TradingService.service, {
-    PlaceOrder: (call: any, callback: any) => {
-        const { symbol, type, volume } = call.request;
-        console.log(`Dunam Velocity: Executing ${type} on ${symbol} [Vol: ${volume}]`);
+    // 1. Handle live market data streaming from MT5 Bridge
+    StreamTicks: (call: any) => {
+        console.log(`📡 Dunam Velocity: Listening to ticks for ${call.request.symbol}`);
         
-        callback(null, { success: true, message: "Order placed", ticket_id: "12345" });
+        call.on('data', async (tick: any) => {
+            // Update Risk Manager with current equity/balance for monitoring
+            risk.updateAccountState({
+                balance: tick.balance,
+                equity: tick.equity,
+                openPositions: tick.openPositions
+            });
+
+            // Pass tick to Engine for SMA + RSI analysis
+            await engine.onTick(tick.symbol, tick.bid, tick.ask);
+        });
+
+        call.on('end', () => console.log("Stream ended by MT5 Bridge."));
+        call.on('error', (err: any) => console.error("gRPC Stream Error:", err));
     },
 
-    StreamTicks: (call: any) => {
-        console.log(`Starting stream for: ${call.request.symbol}`);
-        // High-frequency tick logic goes here
+    // 2. Manual Trade override from your Mobile Dashboard
+    PlaceOrder: async (call: any, callback: any) => {
+        const { symbol, type, volume } = call.request;
+        const check = risk.isTradeAllowed(volume);
+
+        if (check.allowed) {
+            const result = await mt5.sendOrder(symbol, type, volume);
+            callback(null, result);
+        } else {
+            callback(null, { success: false, message: `Risk Blocked: ${check.reason}` });
+        }
     }
 });
 
-const port = "50051";
-server.bindAsync(`0.0.0.0:${port}`, grpc.ServerCredentials.createInsecure(), (err, port) => {
-    if (err) {
-        console.error(`Server error: ${err.message}`);
-        return;
-    }
-    console.log(`Dunam Velocity Backend running on port: ${port}`);
+// Start the High-Velocity Server
+server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), (err, port) => {
+    if (err) return console.error(err);
+    console.log(`🚀 Dunam Velocity Backend synced and running on port: ${port}`);
 });
