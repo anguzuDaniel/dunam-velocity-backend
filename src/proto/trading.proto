@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package dunam;
+
+service TradingService {
+  // Execute a trade immediately
+  rpc PlaceOrder (OrderRequest) returns (OrderResponse);
+  
+  // Stream live price data for high-velocity analysis
+  rpc StreamTicks (SymbolRequest) returns (stream TickData);
+}
+
+message OrderRequest {
+  string symbol = 1;
+  string type = 2; // BUY or SELL
+  double volume = 3;
+}
+
+message OrderResponse {
+  bool success = 1;
+  string message = 2;
+  string ticket_id = 3;
+}
+
+message SymbolRequest {
+  string symbol = 1;
+}
+
+message TickData {
+  string symbol = 1;
+  double bid = 2;
+  double ask = 3;
+  int64 timestamp = 4;
+}

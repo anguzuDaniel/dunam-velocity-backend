@@ -1,0 +1,33 @@
+{
+  "name": "dunam-velocity-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "NODE_OPTIONS='--loader ts-node/esm' nodemon src/index.ts",    
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anguzuDaniel/dunam-velocity-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/anguzuDaniel/dunam-velocity-backend/issues"
+  },
+  "homepage": "https://github.com/anguzuDaniel/dunam-velocity-backend#readme",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.0",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "nodemon": "^3.1.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

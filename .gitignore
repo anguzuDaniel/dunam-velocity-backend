@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+dist/
+build/
+
+# Environment Variables (CRITICAL for Dunam)
+.env
+.env.local
+.env.*.local
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# macOS System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+temp/
+out/
